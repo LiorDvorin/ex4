@@ -82,11 +82,6 @@ int main()
                 for(int i = 0; i < squareSize; i++)
                     for(int j = 0; j < squareSize; j++)
                         scanf(" %c", &board.grid[i][j]);
-                /*for(int i = 0; i < squareSize; i++) {
-                    for(int j = 0; j < squareSize; j++)
-                        printf("%c", board.grid[i][j]);
-                    printf("\n");
-                }*/
                 int column[squareSize], row[squareSize];
                 int queens[NUM_OF_CHARS];
                 initializeArray(column, squareSize, 0, 0);
@@ -149,7 +144,7 @@ void task2HumanPyramid(float arr[SIZEOFPYRAMID][SIZEOFPYRAMID], int lvl, int pos
     task2HumanPyramid(arr, lvl+1, 0);
 }
 int task3ParenthesisValidator(char target) {
-    char c = getchar();
+    char c = fgetc(stdin);
     if(c == '\n') {
         if(target == '\0')
             return 1;
