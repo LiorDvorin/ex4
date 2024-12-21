@@ -5,14 +5,25 @@ Assignment: EX4
 *******************/
 #include <stdio.h>
 
+#define SIZEOFPYRAMID 5
+#define PARENTHESES 4
+#define NUM_OF_CHARS 128
+#define MAX_BOARD_SIZE 20
+
+typedef struct {
+    char grid[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
+} Board;
+
 int task1RobotPaths();
 void task2HumanPyramid();
 int task3ParenthesisValidator(char target);
-void task4QueensBattle(char grid[][], int squareSize);
+void initializeArray(int array[], int size, int value, int index);
+int task4QueensBattle(int squareSize, Board board, int column[squareSize], int row[squareSize],
+                                int queens[NUM_OF_CHARS], int posRow, int posColumn, int numOfQueens);
+void printSolution(Board board, int squareSize);
+int checkAround(Board board, int squareSize, int posRow, int posColumn);
 void task5CrosswordGenerator();
 
-#define SIZEOFPYRAMID 5
-#define PARENTHESES 4
 
 int main()
 {
@@ -67,11 +78,22 @@ int main()
                 int squareSize;
                 scanf("%d", &squareSize);
                 printf("Please enter the %d*%d puzzle board\n", squareSize, squareSize);
-                char grid[squareSize][squareSize];
+                Board board;
                 for(int i = 0; i < squareSize; i++)
                     for(int j = 0; j < squareSize; j++)
-                        scanf("%c", &grid[i][j]);
-                task4QueensBattle(grid, squareSize);
+                        scanf(" %c", &board.grid[i][j]);
+                /*for(int i = 0; i < squareSize; i++) {
+                    for(int j = 0; j < squareSize; j++)
+                        printf("%c", board.grid[i][j]);
+                    printf("\n");
+                }*/
+                int column[squareSize], row[squareSize];
+                int queens[NUM_OF_CHARS];
+                initializeArray(column, squareSize, 0, 0);
+                initializeArray(row, squareSize, 0, 0);
+                initializeArray(queens, NUM_OF_CHARS, 0, 0);
+                if(!task4QueensBattle(squareSize, board, column, row, queens, 0, 0, 0))
+                    printf("This puzzle cannot be solved. \n");
                 break;
             }
             case 5: {
@@ -152,148 +174,71 @@ int task3ParenthesisValidator(char target) {
     return task3ParenthesisValidator(target);
 
 }
-/*int tsk3(int Parentheses[], char lastP) {
-    char c = getchar();
-    if(c == '\n')
-        return Parentheses[0] == 0 && Parentheses[1] == 0 && Parentheses[2] == 0 && Parentheses[3] == 0;
-    switch(c) {
-        case ')': {
-            if(Parentheses[0] > 0) {
-                Parentheses[0]--;
-                return tsk3(Parentheses, lastP);
-            }
-            return 0;
-        }
-        case '}': {
-            if(Parentheses[1] > 0) {
-                Parentheses[1]--;
-                return tsk3(Parentheses, lastP);
-            }
-            return 0;
-        }
-        case ']': {
-            if(Parentheses[2] > 0) {
-                Parentheses[2]--;
-                return tsk3(Parentheses, lastP);
-            }
-            return 0;
-        }
-        case '>': {
-            if(Parentheses[3] > 0) {
-                Parentheses[3]--;
-                return tsk3(Parentheses, lastP);
-            }
-            return 0;
-        }
-    }
 
-
-    switch (c) {
-        case '(': {
-            Parentheses[0]++;
-            return tsk3(Parentheses, c);
-        }
-        case'{': {
-            Parentheses[1]++;
-            return tsk3(Parentheses, c);
-        }
-        case'[': {
-            Parentheses[2]++;
-            return tsk3(Parentheses, c);
-        }
-        case'<': {
-            Parentheses[3]++;
-            return tsk3(Parentheses, c);
-        }
-        default:
-            return tsk3(Parentheses, lastP);
-    }
-}
-void task3ParenthesisValidator(int Parentheses[], char lastP)
-{
-    char c = getchar();
-    if(c == '\n') {
-        printf("%d\n",Parentheses[0]);
-        printf("%d\n",Parentheses[1]);
-        printf("%d\n",Parentheses[2]);
-        printf("%d\n",Parentheses[3]);
-
-        if(Parentheses[0] == 0 && Parentheses[1] == 0 && Parentheses[2] == 0 && Parentheses[3] == 0)
-            printf("The parentheses are balanced correctly. \n");
-        else
-            printf("The parentheses are not balanced correctly. \n");
+void initializeArray(int array[], int size, int value, int index) {
+    if (index >= size) {
         return;
     }
-    switch (lastP){
-        case '(': {
-            if(c == ')')
-                Parentheses[0]--;
-            if(c == '}' || c == ']' || c == '>') {
-                printf("The parentheses are not balanced correctly. \n");
-                return;
-            }
-            break;
-        }
-        case'{': {
-            if(c == '}')
-                Parentheses[1]--;
-            if(c == ')' || c == ']' || c == '>') {
-                printf("The parentheses are not balanced correctly. \n");
-                return;
-            }
-            break;
-        }
-        case'[': {
-            if(c == ']')
-                Parentheses[2]--;
-            if(c == ')' || c == '}' || c == '>') {
-                printf("The parentheses are not balanced correctly. \n");
-                return;
-            }
-            break;
-        }
-        case'<': {
-            if(c == '>')
-                Parentheses[3]--;
-            if(c == ')' || c == '}' || c == ']') {
-                printf("The parentheses are not balanced correctly. \n");
-                return;
-            }
-            break;
-        }
-        default: break;
-    }
-    switch (c) {
-        case '(': {
-            Parentheses[0]++;
-            lastP = c;
-            break;
-        }
-        case'{': {
-            Parentheses[1]++;
-            lastP = c;
-            break;
-        }
-        case'[': {
-            Parentheses[2]++;
-            lastP = c;
-            break;
-        }
-        case'<': {
-            Parentheses[3]++;
-            lastP = c;
-            break;
-        }
-        default: break;
-    }
-    task3ParenthesisValidator(Parentheses, lastP);
-}*/
-
-void task4QueensBattle(char grid[][], int squareSize);
-{
-
+    array[index] = value;
+    initializeArray(array, size, value, index + 1);
 }
 
+int task4QueensBattle(int squareSize, Board board, int column[squareSize], int row[squareSize],
+                                int queens[NUM_OF_CHARS], int posRow, int posColumn, int numOfQueens)
+{
+    //check if the program passed the last line and return the value accordingly
+    if(posRow == squareSize) {
+        if (numOfQueens == squareSize) {
+            printSolution(board, squareSize);
+            return 1;
+        }
+        return 0;
+    }
+    //check if position is not out of bounds
+    if(posColumn == squareSize)
+        return task4QueensBattle(squareSize, board, column, row, queens, posRow+1, 0, numOfQueens);
+    //check if a queen can be placed
+    if(queens[board.grid[posRow][posColumn]] == 1 || column[posColumn] == 1 || row[posRow] == 1 ||
+                                                    checkAround(board,squareSize, posRow, posColumn))
+        return task4QueensBattle(squareSize, board, column, row, queens, posRow, posColumn+1, numOfQueens);
+
+    //copy the board and place queen on the copied board then check if the solution is possible
+    Board copy = board;
+    queens[copy.grid[posRow][posColumn]] = 1;
+    //mark the queens as null char so i can differentiate between the board char and the queen mark char
+    copy.grid[posRow][posColumn] = '\0';
+    column[posColumn] = 1;
+    row[posRow] = 1;
+    if(task4QueensBattle(squareSize, copy, column, row, queens, posRow, posColumn+1, numOfQueens+1))
+        return 1;
+
+    //solution was not possible on the copied board so revert the queen placement and go to the next square
+    queens[board.grid[posRow][posColumn]] = 0;
+    column[posColumn] = 0;
+    row[posRow] = 0;
+    return task4QueensBattle(squareSize, board, column, row, queens, posRow, posColumn+1, numOfQueens);
+}
+void printSolution(Board board, int squareSize) {
+    for(int i = 0; i < squareSize; i++) {
+        for(int j = 0; j < squareSize; j++) {
+            if(board.grid[i][j] == '\0')
+                printf("X ");
+            else
+                printf("* ");
+        }
+        printf("\n");
+    }
+}
+
+//check if there is not a queen around
+int checkAround(Board board, int squareSize, int posRow, int posColumn) {
+    if((posRow>0&&posColumn>0&&board.grid[posRow-1][posColumn-1]=='\0')||
+        (posColumn<squareSize-1&&posRow>0&&board.grid[posRow-1][posColumn+1]=='\0')||
+        (posRow<squareSize-1&&posColumn>0&&board.grid[posRow+1][posColumn-1]=='\0')||
+        (posRow<squareSize-1&&posColumn<squareSize-1&&board.grid[posRow+1][posColumn+1]=='\0'))
+        return 1;
+    return 0;
+}
 void task5CrosswordGenerator()
 {
 
