@@ -36,20 +36,16 @@ int task4QueensBattle(int squareSize, Board board, int column[squareSize], int r
                                 int queens[NUM_OF_CHARS], int posRow, int posColumn, int numOfQueens);
 void printSolution(Board board, int squareSize);
 int checkAround(Board board, int squareSize, int posRow, int posColumn);
-int task5CrosswordGenerator(int squareSize, Crossword crossword, int numOfSlots, Slot slots[numOfSlots], int numOfWords,
-    char words[numOfWords][MAX_WORD_LENGTH], char dupWords[numOfWords][MAX_WORD_LENGTH],int posRow, int posColumn,
-                                                            int numOfInsertedWords, int index);
 Crossword generateEmptyCrossword(int squareSize, Crossword board, int numOfSlots, Slot slots[numOfSlots],
                       int posRow, int posColumn,int numOfInsertedSlots, int index, char direction);
 Crossword insertWord(Crossword board, char word[MAX_WORD_LENGTH], int posRow, int posColumn, int index
                                                                                         ,int wordLength, char direction);
 void printCrosswordSolution(int squareSize, Crossword solution,int numOfSlots, Slot slots[numOfSlots]);
 void organizeSlots(int numOfSlots, Slot slots[numOfSlots], int index);
-void organizeSlotsByIndex(int numOfSlots, Slot slots[numOfSlots], int index);
 void swapSlots(int numOfSlots, Slot slots[numOfSlots], int index1, int index2);
-void duplicateWords(int numOfWords, char words[numOfWords][MAX_WORD_LENGTH], char dupWords[numOfWords][MAX_WORD_LENGTH], int index);
-//int buildEmpty(Crossword board, );
-
+int task5CrosswordGenerator(int squareSize, Crossword crossword, int numOfSlots, Slot slots[numOfSlots],
+                            int numOfWords, char words[numOfWords][MAX_WORD_LENGTH],
+                            int usedWords[numOfWords], int currentSlot, int currentWord);
 
 int main()
 {
@@ -126,9 +122,11 @@ int main()
                 printf("Please enter the number of slots in the crossword: \n");
                 scanf("%d", &numOfSlots);
                 printf("Please enter the details for each slot (Row, Column, Length, Direction): \n");
-                Slot slots[numOfSlots];
-                for(int i = 0; i < numOfSlots; i++)
+                Slot slots[numOfSlots], slotsCopy[numOfSlots];//**********
+                for(int i = 0; i < numOfSlots; i++) {
                     scanf("%d %d %d %c", &slots[i].row, &slots[i].column, &slots[i].length, &slots[i].direction);
+                    slotsCopy[i] = slots[i]; //******
+                }
                 int numOfWords;
                 printf("Please enter the number of words in the dictionary: \n");
                 scanf("%d", &numOfWords);
@@ -138,26 +136,16 @@ int main()
                     scanf("%d", &numOfWords);
                 }
                 printf("Please enter the words for the dictionary: \n");
-                char words[MAX_NUM_OF_WORDS][MAX_WORD_LENGTH], dupWords[MAX_NUM_OF_WORDS][MAX_WORD_LENGTH];
+                char words[MAX_NUM_OF_WORDS][MAX_WORD_LENGTH];
                 for(int i = 0; i < numOfWords; i++)
                     scanf(" %s", &words[i]);
-                duplicateWords(numOfSlots, words, dupWords, 0);
                 //organize the slots so the horizontal ones are checked first and then the vertical ones so i can insert them into the empty board
                 organizeSlots(numOfSlots, slots, 0);
-                for(int i = 0; i < numOfSlots; i++)
-                    printf("%d %d %d %c\n", slots[i].row, slots[i].column, slots[i].length, slots[i].direction);
                 //create a crossword board where the slots are marked
-                Crossword emptyCrossword = generateEmptyCrossword(squareSize, emptyCrossword, numOfSlots, slots, 0,0,0,0,'H');
-                //organize the slots by their position on the board for the inserting of the words in the correct order
-                organizeSlotsByIndex(numOfSlots, slots, 0);
-                for(int i = 0; i < numOfSlots; i++)
-                    printf("%d %d %d %c\n", slots[i].row, slots[i].column, slots[i].length, slots[i].direction);
-                for(int i = 0; i < squareSize; i++) {
-                    for(int j = 0; j < squareSize; j++)
-                        printf("%c", emptyCrossword.grid[i][j]);
-                    printf("\n");
-                }
-                if(!task5CrosswordGenerator(squareSize, emptyCrossword,numOfSlots, slots, numOfWords, words, dupWords, 0, 0, 0, 0))
+                Crossword emptyCrossword = generateEmptyCrossword(squareSize, emptyCrossword, numOfSlots, slots, 0,0,
+                                                                                                            0,0,'H');
+                int usedWords[numOfWords] = { };
+                if(!task5CrosswordGenerator(squareSize, emptyCrossword, numOfSlots, slotsCopy, numOfWords, words, usedWords, 0, 0))
                     printf("This crossword cannot be solved. \n");
                 break;
             }
@@ -210,13 +198,15 @@ void task2HumanPyramid(float arr[SIZEOFPYRAMID][SIZEOFPYRAMID], int lvl, int pos
     task2HumanPyramid(arr, lvl+1, 0);
 }
 int task3ParenthesisValidator(char target) {
-    //char c = getchar();
-    char c = fgetc(stdin);
+    char c = getchar();
+    //check for the end of the input
     if(c == '\n') {
+        //we set the first target to be the null char so we can identify if all targets on the way were found succesfully
         if(target == '\0')
             return 1;
         return 0;
     }
+    //if current char is an opening parentheses, set it as the current target. if the new target was found, continue to the previous one
     switch(c) {
         case '(':
             return task3ParenthesisValidator(')') && task3ParenthesisValidator(target);
@@ -228,6 +218,8 @@ int task3ParenthesisValidator(char target) {
             return task3ParenthesisValidator('>') && task3ParenthesisValidator(target);
 
     }
+    //check if the current closing parentheses is the one we are looking for(the last one we saw)
+
     if(c == ')' || c == '}' || c == ']' || c == '>') {
         if(c == target)
             return 1;
@@ -280,6 +272,7 @@ int task4QueensBattle(int squareSize, Board board, int column[squareSize], int r
     row[posRow] = 0;
     return task4QueensBattle(squareSize, board, column, row, queens, posRow, posColumn+1, numOfQueens);
 }
+//function that prints the solution of the board(if there is one)
 void printSolution(Board board, int squareSize) {
     for(int i = 0; i < squareSize; i++) {
         for(int j = 0; j < squareSize; j++) {
@@ -301,78 +294,59 @@ int checkAround(Board board, int squareSize, int posRow, int posColumn) {
         return 1;
     return 0;
 }
-int task5CrosswordGenerator(int squareSize, Crossword crossword, int numOfSlots, Slot slots[numOfSlots], int numOfWords,
-        char words[numOfWords][MAX_WORD_LENGTH], char dupWords[numOfWords][MAX_WORD_LENGTH],int posRow, int posColumn,
-                                int numOfInsertedWords, int index)
-{
-    //check if the program passed the last line and if solution was found
-    if(posRow == squareSize) {
-        if(numOfInsertedWords == numOfSlots) {
-        printf("YES\n");
-            printCrosswordSolution(squareSize, crossword,numOfSlots, slots);
-            return 1;
-        }
-        printf("NO\n");
+
+int task5CrosswordGenerator(int squareSize, Crossword crossword, int numOfSlots, Slot slots[numOfSlots],
+                            int numOfWords, char words[numOfWords][MAX_WORD_LENGTH],
+                            int usedWords[numOfWords], int currentSlot, int currentWord) {
+    //check if we filled all the slots
+    if(currentSlot == numOfSlots) {
+        printCrosswordSolution(squareSize, crossword, numOfSlots, slots);
+        return 1;
+    }
+    //check if we passed all the words and they didnt fit into a slot
+    if(currentWord == numOfWords)
         return 0;
-    }
-    //check if the program passed the last column so it can continue to the next row
-    if(posColumn == squareSize)
-        return task5CrosswordGenerator(squareSize, crossword,numOfSlots, slots, numOfWords, words, dupWords, posRow+1, 0,
-                                                                numOfInsertedWords, 0);
-    //check if the program reached the position of a slot
-    if(posRow == slots[numOfInsertedWords].row && posColumn == slots[numOfInsertedWords].column) {
-        if(strlen(words[index]) == slots[numOfInsertedWords].length) {
-            Crossword copy = insertWord(crossword, words[index], posRow, posColumn, 0, strlen(words[index]),
-                                                                                    slots[numOfInsertedWords].direction);
-            //check for the signal if the word cannot fit
-            if(copy.grid[0][0] == '*') {
-                copy.grid[0][0] = crossword.grid[0][0];
-                if(task5CrosswordGenerator(squareSize, crossword,numOfSlots, slots, numOfWords, dupWords, dupWords,posRow,
-                                                             posColumn+1,numOfInsertedWords, index+1))
-                    return 1;
-            }
-            strcpy(dupWords[index], "0");
-            numOfInsertedWords++;
-            if(numOfInsertedWords <= numOfSlots && slots[numOfInsertedWords].column == posColumn &&
-                                                                slots[numOfInsertedWords].row == posRow)
-                if(task5CrosswordGenerator(squareSize, copy, numOfSlots, slots, numOfWords, dupWords, dupWords, posRow, posColumn,
-                                                                numOfInsertedWords, 0))
-                    return 1;
-            if(task5CrosswordGenerator(squareSize, copy,numOfSlots, slots, numOfWords, dupWords, dupWords,posRow, posColumn+1,
-                                                                numOfInsertedWords, 0))
+    //check if current word's length matches the slots length
+    if(usedWords[currentWord] == 0 && strlen(words[currentWord]) == slots[currentSlot].length) {
+        //create a copy of the crossword where we inserted the word
+        Crossword copy = insertWord(crossword, words[currentWord], slots[currentSlot].row, slots[currentSlot].column
+                             , 0, slots[currentSlot].length,slots[currentSlot].direction);
+        //check for the signal that tells us if the word fit or not
+        if(copy.grid[0][0] != '*') {
+            //mark the words we used so we know not to use them again
+            usedWords[currentWord] = 1;
+            if(task5CrosswordGenerator(squareSize, copy,numOfSlots, slots, numOfWords, words, usedWords,
+                                                                                    currentSlot+1, 0))
                 return 1;
+            //if previous inserted word didnt return 1 then the word wasnt supposed to go there so we unmark it
+            usedWords[currentWord] = 0;
         }
-        return task5CrosswordGenerator(squareSize, crossword,numOfSlots, slots, numOfWords, words, words,posRow, posColumn,
-                                                                numOfInsertedWords, index+1);
     }
-    return task5CrosswordGenerator(squareSize, crossword,numOfSlots, slots, numOfWords, words, words, posRow, posColumn+1,
-                                                                numOfInsertedWords, 0);
+    return task5CrosswordGenerator(squareSize, crossword,numOfSlots, slots, numOfWords, words, usedWords,
+                                                                            currentSlot, currentWord+1);
 }
 //function that inserts a word into the board
 Crossword insertWord(Crossword board, char word[MAX_WORD_LENGTH], int posRow, int posColumn, int index,
                                                     int wordLength, char direction) {
     if(index == wordLength)
         return board;
-    if(board.grid[posRow][posColumn] != '$') {
-        if(board.grid[posRow][posColumn] == word[index])
-            board.grid[posRow][posColumn] = word[index];
+    if(board.grid[posRow][posColumn] != '$' && board.grid[posRow][posColumn] != word[index]) {
         //if the slot is blocked by a letter send a signal that the word cannot fit
-        else {
-            board.grid[0][0] = '*';
-            return board;
-        }
+        board.grid[0][0] = '*';
+        return board;
     }
     board.grid[posRow][posColumn] = word[index];
-
     if(direction == 'H')
         return insertWord(board, word, posRow, posColumn+1, index+1, wordLength, direction);
     return insertWord(board, word, posRow+1, posColumn, index+1, wordLength, direction);
 }
+//generate a crossword that marks all the slots
 Crossword generateEmptyCrossword(int squareSize, Crossword board, int numOfSlots, Slot slots[numOfSlots],
                                        int posRow, int posColumn,int numOfInsertedSlots, int index, char direction) {
     if(direction == 'V' && posColumn == squareSize) {
         return board;
     }
+    //mark all slots position by a '$' sign for easier word inserting later
     if(direction == 'H') {
         if(posRow == squareSize)
             return generateEmptyCrossword(squareSize, board, numOfSlots, slots, 0,0,numOfInsertedSlots,0,'V');
@@ -390,6 +364,7 @@ Crossword generateEmptyCrossword(int squareSize, Crossword board, int numOfSlots
             return generateEmptyCrossword(squareSize, board, numOfSlots, slots, posRow, posColumn+1,numOfInsertedSlots,
                                                                     slots[numOfInsertedSlots-1].length-1, 'H');
         }
+        //all positions that didnt include a slot get marked as '#'
         board.grid[posRow][posColumn] = '#';
         return generateEmptyCrossword(squareSize, board, numOfSlots, slots, posRow, posColumn+1,numOfInsertedSlots, 0, 'H');
     }
@@ -412,6 +387,8 @@ Crossword generateEmptyCrossword(int squareSize, Crossword board, int numOfSlots
         board.grid[posRow][posColumn] = '#';
     return generateEmptyCrossword(squareSize, board, numOfSlots, slots, posRow+1, posColumn,numOfInsertedSlots, 0, 'V');
 }
+//function to organize the slots by their direction first and then the horizontal ones by row and vertical ones by column
+//for easier generation of empty crossword
 void organizeSlots(int numOfSlots, Slot slots[numOfSlots], int index) {
     if (index >= numOfSlots - 1)
         return;
@@ -421,58 +398,22 @@ void organizeSlots(int numOfSlots, Slot slots[numOfSlots], int index) {
         (slots[index].direction == slots[index + 1].direction &&
          ((slots[index].direction == 'H' && slots[index].row > slots[index + 1].row) ||
           (slots[index].direction == 'V' && slots[index].column > slots[index + 1].column)))) {
-
         swapSlots(numOfSlots, slots, index, index + 1);
-
+        //return to the previous index to check if organized correctly
         if (index > 0) {
             organizeSlots(numOfSlots, slots, index - 1);
             return;
         }
-          }
-
-    // Move to next position
-    organizeSlots(numOfSlots, slots, index + 1);
-}
-/*void organizeSlots(int numOfSlots, Slot slots[numOfSlots], int index) {
-    if (index >= numOfSlots - 1)
-        return;
-    // Compare current slot with next slot
-    if ((slots[index].direction == 'V' && slots[index + 1].direction == 'H') ||
-
-        (slots[index].direction == slots[index + 1].direction &&
-         (slots[index].row > slots[index + 1].row ||
-          (slots[index].row == slots[index + 1].row &&
-           slots[index].column > slots[index + 1].column)))) {
-        swapSlots(numOfSlots, slots, index, index + 1);
-        if (index >= 0) {
-            organizeSlots(numOfSlots, slots, index - 1);
-            return;
-        }
     }
-    // Move to next position
     organizeSlots(numOfSlots, slots, index + 1);
-}*/
-void organizeSlotsByIndex(int numOfSlots, Slot slots[], int index) {
-    if (index >= numOfSlots - 1)
-        return;
-
-    if ((slots[index].row > slots[index + 1].row) ||
-        (slots[index].row == slots[index + 1].row && slots[index].column > slots[index + 1].column)) {
-        swapSlots(numOfSlots, slots, index, index + 1);
-        if (index >= 0) {
-            organizeSlotsByIndex(numOfSlots, slots, index - 1);
-            return;
-        }
-        }
-
-    organizeSlotsByIndex(numOfSlots, slots, index + 1);
 }
-//function to swap the places of 2 slots
+//function to swap the places of 2 slots for organization
 void swapSlots(int numOfSlots, Slot slots[numOfSlots], int i, int j) {
     Slot temp = slots[i];
     slots[i] = slots[j];
     slots[j] = temp;
 }
+//function that prints the solution of the crossword(if there is one)
 void printCrosswordSolution(int squareSize, Crossword solution,int numOfSlots, Slot slots[numOfSlots]) {
     for(int i = 0; i < squareSize; i++) {
         printf("| ");
@@ -481,10 +422,4 @@ void printCrosswordSolution(int squareSize, Crossword solution,int numOfSlots, S
         }
         printf("|\n");
     }
-}
-void duplicateWords(int numOfWords, char words[numOfWords][MAX_WORD_LENGTH], char dupWords[numOfWords][MAX_WORD_LENGTH], int index) {
-    if(index == numOfWords)
-        return;
-    strcpy(dupWords[index], words[index]);
-    duplicateWords(numOfWords, words, dupWords, index+1);
 }
