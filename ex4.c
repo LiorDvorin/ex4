@@ -31,6 +31,7 @@ typedef struct {
 int task1RobotPaths();
 void task2HumanPyramid();
 int task3ParenthesisValidator(char target);
+void processInput();
 void initializeArray(int array[], int size, int value, int index);
 int task4QueensBattle(int squareSize, Board board, int column[squareSize], int row[squareSize],
                                 int queens[NUM_OF_CHARS], int posRow, int posColumn, int numOfQueens);
@@ -40,7 +41,7 @@ Crossword generateEmptyCrossword(int squareSize, Crossword board, int numOfSlots
                       int posRow, int posColumn,int numOfInsertedSlots, int index, char direction);
 Crossword insertWord(Crossword board, char word[MAX_WORD_LENGTH], int posRow, int posColumn, int index
                                                                                         ,int wordLength, char direction);
-void printCrosswordSolution(int squareSize, Crossword solution,int numOfSlots, Slot slots[numOfSlots]);
+void printCrosswordSolution(int squareSize, Crossword solution);
 void organizeSlots(int numOfSlots, Slot slots[numOfSlots], int index);
 void swapSlots(int numOfSlots, Slot slots[numOfSlots], int index1, int index2);
 int task5CrosswordGenerator(int squareSize, Crossword crossword, int numOfSlots, Slot slots[numOfSlots],
@@ -74,34 +75,39 @@ int main()
             case 2: {
                 printf("Please enter the weights of the cheerleaders: \n");
                 float arr[SIZEOFPYRAMID][SIZEOFPYRAMID];
+                int v;
                 for(int i = 0 ; i < SIZEOFPYRAMID; i++) {
                     for (int j = 0 ; j < i+1; j++) {
                         scanf("%f", &arr[i][j]);
-                        while (arr[i][j] <= 0) {
+                        v = arr[i][j];
+                        if (arr[i][j] <= 0) {
                             printf("Negative weights are not supported. \n");
-                            scanf("%f", &arr[i][j]);
+                            break;
                         }
                     }
+                    if (v <= 0) break;
                 }
+                if (v <= 0) break;
+                printf("The total weight on each cheerleader is: \n");
                 task2HumanPyramid(arr, 0, 0);
                 break;
             }
             case 3: {
                 printf("Please enter a term for validation: \n");
-                scanf(" %[^\n]");
+                if(getchar() == '\n')
+                    scanf("[^\n]");
                 if(task3ParenthesisValidator('\0'))
                     printf("The parentheses are balanced correctly. \n");
-                else
+                else {
                     printf("The parentheses are not balanced correctly. \n");
-                scanf("%*[^\n]");
-                scanf("%*c");
+                }
                 break;
             }
             case 4: {
                 printf("Please enter the board dimensions: \n");
                 int squareSize;
                 scanf("%d", &squareSize);
-                printf("Please enter the %d*%d puzzle board\n", squareSize, squareSize);
+                printf("Please enter a %d*%d puzzle board: \n", squareSize, squareSize);
                 Board board;
                 for(int i = 0; i < squareSize; i++)
                     for(int j = 0; j < squareSize; j++)
@@ -138,13 +144,14 @@ int main()
                 printf("Please enter the words for the dictionary: \n");
                 char words[MAX_NUM_OF_WORDS][MAX_WORD_LENGTH];
                 for(int i = 0; i < numOfWords; i++)
-                    scanf(" %s", &words[i]);
+                    scanf("%s", words[i]);
                 //organize the slots so the horizontal ones are checked first and then the vertical ones so i can insert them into the empty board
                 organizeSlots(numOfSlots, slots, 0);
                 //create a crossword board where the slots are marked
                 Crossword emptyCrossword = generateEmptyCrossword(squareSize, emptyCrossword, numOfSlots, slots, 0,0,
                                                                                                             0,0,'H');
-                int usedWords[numOfWords] = { };
+                int usedWords[numOfWords];
+                initializeArray(usedWords, numOfWords, 0, 0);
                 if(!task5CrosswordGenerator(squareSize, emptyCrossword, numOfSlots, slotsCopy, numOfWords, words, usedWords, 0, 0))
                     printf("This crossword cannot be solved. \n");
                 break;
@@ -179,8 +186,10 @@ int task1RobotPaths(int x, int y)
 
 void task2HumanPyramid(float arr[SIZEOFPYRAMID][SIZEOFPYRAMID], int lvl, int pos)
 {
-    if(lvl == 5)
+    if(lvl >= SIZEOFPYRAMID) {
+        printf("\n");
         return;
+    }
     if(lvl == 0)
         printf("%.2f", arr[0][0]);
     else {
@@ -194,8 +203,11 @@ void task2HumanPyramid(float arr[SIZEOFPYRAMID][SIZEOFPYRAMID], int lvl, int pos
     }
     if(pos < lvl)
         task2HumanPyramid(arr, lvl, pos+1);
-    printf("\n");
-    task2HumanPyramid(arr, lvl+1, 0);
+    else {
+        printf("\n");
+        if(lvl < SIZEOFPYRAMID - 1)
+            task2HumanPyramid(arr, lvl+1, 0);
+    }
 }
 int task3ParenthesisValidator(char target) {
     char c = getchar();
@@ -223,10 +235,11 @@ int task3ParenthesisValidator(char target) {
     if(c == ')' || c == '}' || c == ']' || c == '>') {
         if(c == target)
             return 1;
+        scanf("%*[^\n]");
+        scanf("%*c");
         return 0;
     }
     return task3ParenthesisValidator(target);
-
 }
 
 void initializeArray(int array[], int size, int value, int index) {
@@ -252,13 +265,13 @@ int task4QueensBattle(int squareSize, Board board, int column[squareSize], int r
     if(posColumn == squareSize)
         return task4QueensBattle(squareSize, board, column, row, queens, posRow+1, 0, numOfQueens);
     //check if a queen can be placed
-    if(queens[board.grid[posRow][posColumn]] == 1 || column[posColumn] == 1 || row[posRow] == 1 ||
+    if(queens[(int)board.grid[posRow][posColumn]] == 1 || column[posColumn] == 1 || row[posRow] == 1 ||
                                                     checkAround(board,squareSize, posRow, posColumn))
         return task4QueensBattle(squareSize, board, column, row, queens, posRow, posColumn+1, numOfQueens);
 
     //copy the board and place queen on the copied board then check if the solution is possible
     Board copy = board;
-    queens[copy.grid[posRow][posColumn]] = 1;
+    queens[(int)copy.grid[posRow][posColumn]] = 1;
     //mark the queens as null char so i can differentiate between the board char and the queen mark char
     copy.grid[posRow][posColumn] = '\0';
     column[posColumn] = 1;
@@ -267,13 +280,14 @@ int task4QueensBattle(int squareSize, Board board, int column[squareSize], int r
         return 1;
 
     //solution was not possible on the copied board so revert the queen placement and go to the next square
-    queens[board.grid[posRow][posColumn]] = 0;
+    queens[(int)board.grid[posRow][posColumn]] = 0;
     column[posColumn] = 0;
     row[posRow] = 0;
     return task4QueensBattle(squareSize, board, column, row, queens, posRow, posColumn+1, numOfQueens);
 }
 //function that prints the solution of the board(if there is one)
 void printSolution(Board board, int squareSize) {
+    printf("Solution: \n");
     for(int i = 0; i < squareSize; i++) {
         for(int j = 0; j < squareSize; j++) {
             if(board.grid[i][j] == '\0')
@@ -300,14 +314,14 @@ int task5CrosswordGenerator(int squareSize, Crossword crossword, int numOfSlots,
                             int usedWords[numOfWords], int currentSlot, int currentWord) {
     //check if we filled all the slots
     if(currentSlot == numOfSlots) {
-        printCrosswordSolution(squareSize, crossword, numOfSlots, slots);
+        printCrosswordSolution(squareSize, crossword);
         return 1;
     }
     //check if we passed all the words and they didnt fit into a slot
     if(currentWord == numOfWords)
         return 0;
     //check if current word's length matches the slots length
-    if(usedWords[currentWord] == 0 && strlen(words[currentWord]) == slots[currentSlot].length) {
+    if(usedWords[currentWord] == 0 && (int)strlen(words[currentWord]) == slots[currentSlot].length) {
         //create a copy of the crossword where we inserted the word
         Crossword copy = insertWord(crossword, words[currentWord], slots[currentSlot].row, slots[currentSlot].column
                              , 0, slots[currentSlot].length,slots[currentSlot].direction);
@@ -414,12 +428,12 @@ void swapSlots(int numOfSlots, Slot slots[numOfSlots], int i, int j) {
     slots[j] = temp;
 }
 //function that prints the solution of the crossword(if there is one)
-void printCrosswordSolution(int squareSize, Crossword solution,int numOfSlots, Slot slots[numOfSlots]) {
+void printCrosswordSolution(int squareSize, Crossword solution) {
     for(int i = 0; i < squareSize; i++) {
         printf("| ");
         for(int j = 0; j < squareSize; j++) {
-            printf("%c ", solution.grid[i][j]);
+            printf("%c | ", solution.grid[i][j]);
         }
-        printf("|\n");
+        printf("\n");
     }
 }
